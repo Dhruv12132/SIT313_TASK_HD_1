@@ -19,10 +19,12 @@ function Navbar() {
 
     window.addEventListener("userLogin", updateUser);
     window.addEventListener("userLogout", updateUser);
+    window.addEventListener("userUpdate", updateUser);
 
     return () => {
       window.removeEventListener("userLogin", updateUser);
       window.removeEventListener("userLogout", updateUser);
+      window.removeEventListener("userUpdate", updateUser);
     };
   }, []);
 
@@ -50,10 +52,14 @@ function Navbar() {
         <a href="#contact">Contact</a>
 
         <Link to="/pricing">Pricing</Link>
+        <Link to="/post">Create Post</Link>
+        <Link to="/browse-posts">Browse Posts</Link>
 
         {user ? (
           <>
-            <span>Hi, {user.name}</span>
+           <span>
+            Hi, {user.name} ({user.plan || "Free"} Plan)
+          </span>
 
             <button type="button" onClick={handleLogout}>
               Logout

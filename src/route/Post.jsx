@@ -4,6 +4,7 @@ import "./Post.css";
 
 function Post() {
   const [postType, setPostType] = useState("Question");
+  const [postPlan, setPostPlan] = useState("Free");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [abstract, setAbstract] = useState("");
@@ -55,9 +56,20 @@ function Post() {
           description: description,
           abstract: abstract,
           articleText: articleText,
-          tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean)
+          tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+          plan: postPlan,  
         })
       });
+
+      const tagList = tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+
+      if (tagList.length === 0 || tagList.length > 3) {
+        alert("Please enter between 1 and 3 tags");
+        return;
+         }
 
       const data = await response.json();
 
@@ -110,6 +122,32 @@ function Post() {
           Article
         </label>
       </div>
+
+      <div className="post-plan">
+  <span>Select Post Plan:</span>
+
+  <label>
+    <input
+      type="radio"
+      name="postPlan"
+      value="Free"
+      checked={postPlan === "Free"}
+      onChange={(event) => setPostPlan(event.target.value)}
+    />
+    Free
+  </label>
+
+  <label>
+    <input
+      type="radio"
+      name="postPlan"
+      value="Paid"
+      checked={postPlan === "Paid"}
+      onChange={(event) => setPostPlan(event.target.value)}
+    />
+    Paid
+  </label>
+</div>
 
       <form onSubmit={handlePost}>
         <h2>

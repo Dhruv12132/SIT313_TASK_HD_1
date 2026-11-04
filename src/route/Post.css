@@ -69,6 +69,24 @@
   font-size: 14px;
 }
 
+.post-plan {
+  display: flex;
+  align-items: center;
+  gap: 35px;
+  margin: 15px 5px 25px;
+}
+
+.post-plan label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.post-plan input {
+  cursor: pointer;
+}
+
 
 /* Mobile layout */
 @media (max-width: 600px) {

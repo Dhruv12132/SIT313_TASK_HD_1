@@ -53,6 +53,40 @@ function verifyToken(req, res, next) {
     }
 }
 
+function optionalToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    // Allow visitors without a token
+    if (!authHeader) {
+        req.userId = null;
+        return next();
+    }
+
+    if (!authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({
+            message: "Invalid login token"
+        });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
+
+        req.userId = decoded.userId;
+
+        next();
+
+    } catch (error) {
+        return res.status(401).json({
+            message: "Please log in again"
+        });
+    }
+}
+
 // Register a new user
 app.post("/register", async (req, res) => {
     try {
@@ -236,13 +270,19 @@ app.post("/upgrade", verifyToken, async (req, res) => {
 
 app.post("/posts", verifyToken, async (req, res) => {
     try {
-        const { type, title, description, abstract, articleText, tags } = req.body;
+        const { type, plan, title, description, abstract, articleText, tags } = req.body;
 
         if (!title || !title.trim() || !Array.isArray(tags)) {
             return res.status(400).json({
                 message: "Please enter a title and tags"
             });
         }
+
+        if (!["Free", "Paid"].includes(plan)) {
+            return res.status(400).json({
+                message: "Please select a valid post plan"
+            });
+}
 
         if (!["Question", "Article"].includes(type)) {
             return res.status(400).json({
@@ -280,11 +320,17 @@ app.post("/posts", verifyToken, async (req, res) => {
 
         const newPost = {
             type: type,
+            plan: plan,
             title: title.trim(),
+
             description: type === "Question" ? description.trim() : "",
+
             abstract: type === "Article" ? abstract.trim() : "",
+
             articleText: type === "Article" ? articleText.trim() : "",
+
             tags: tags.map((tag) => tag.trim()),
+
             author: user.name,
             authorId: req.userId,
             createdAt: new Date().toISOString()
@@ -301,6 +347,78 @@ app.post("/posts", verifyToken, async (req, res) => {
 
         res.status(500).json({
             message: "Could not save the post"
+        });
+    }
+});
+
+// Get posts according to the user's subscription plan
+app.get("/posts", optionalToken, async (req, res) => {
+    try {
+
+        let userPlan = "Visitor";
+
+        // Check the actual subscription from Firestore
+        if (req.userId) {
+
+            const userDoc = await db.collection("users")
+                .doc(req.userId)
+                .get();
+
+            if (!userDoc.exists) {
+                return res.status(404).json({
+                    message: "User not found"
+                });
+            }
+
+            const user = userDoc.data();
+
+            userPlan = user.plan || "Free";
+        }
+
+        // Fetch posts inside the backend
+        const snapshot = await db.collection("posts").get();
+
+        const allPosts = snapshot.docs.map((doc) => {
+            const postData = doc.data();
+
+            return {
+                ...postData,
+                id: doc.id,
+                plan: postData.plan || "Free"
+            };
+        });
+
+        // Decide which posts the user is allowed to see
+        let visiblePosts;
+
+        if (userPlan === "Paid") {
+
+            visiblePosts = allPosts;
+
+        } else {
+
+            visiblePosts = allPosts.filter(
+                (post) => post.plan === "Free"
+            );
+        }
+
+        // Display newest posts first
+        visiblePosts.sort((a, b) => {
+            return new Date(b.createdAt).getTime() -
+                   new Date(a.createdAt).getTime();
+        });
+
+        res.json({
+            userPlan: userPlan,
+            posts: visiblePosts
+        });
+
+    } catch (error) {
+
+        console.log(error);
+
+        res.status(500).json({
+            message: "Could not fetch posts"
         });
     }
 });

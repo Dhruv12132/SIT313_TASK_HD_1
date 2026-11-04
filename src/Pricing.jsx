@@ -65,6 +65,7 @@ function Pricing() {
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
       setUser(updatedUser);
+      window.dispatchEvent(new Event("userUpdate"));
       setShowModal(false);
 
       alert("Your plan has been upgraded successfully");

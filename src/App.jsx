@@ -15,7 +15,8 @@ import Footer from "./route/Footer";
 import Login from "./route/Login";
 import Signup from "./route/Signup";
  
-import Post from "./route/post";
+import Post from "./route/Post";
+import BrowsePosts from "./route/BrowsePosts";
 import Subscribe from "./Subscribe";
 import Pricing from "./Pricing";
 function Home() {
@@ -43,6 +44,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/post" element={<Post />} />
+        <Route path="/browse-posts" element={<BrowsePosts />} />
         <Route path="/pricing" element={<Pricing />} />
       </Routes>
 
