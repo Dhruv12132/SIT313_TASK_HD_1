@@ -1,49 +1,116 @@
-.subscribe-section {
-  padding: 10px 20px 55px;
 
+.subscribe-section {
+  padding: 65px 20px;
   text-align: center;
+  background: #f7f8fa;
+}
+
+.subscribe-content {
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+.subscribe-tag {
+  display: inline-block;
+  color: #555;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 15px;
 }
 
 .subscribe-section h2 {
   font-size: 32px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 14px;
+}
 
-  margin-bottom: 30px;
+.subscribe-section p {
+  color: #666;
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 25px;
 }
 
 .subscribe-form {
   display: flex;
-
   justify-content: center;
-
   align-items: center;
+  gap: 10px;
+  max-width: 550px;
+  margin: 0 auto;
 }
 
 .subscribe-form input {
-  width: 300px;
-
-  height: 40px;
-
-  padding: 8px;
-
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  padding: 0 16px;
   border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
 
-  font-size: 16px;
+.subscribe-form input:focus {
+  border-color: #333;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.07);
 }
 
 .subscribe-form button {
-  height: 40px;
-
-  padding: 0 18px;
-
+  height: 48px;
+  padding: 0 25px;
   border: none;
-
-  background-color: white;
-
-  font-size: 16px;
-
+  border-radius: 6px;
+  background: #222;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.subscribe-form button:hover:not(:disabled) {
+  background: #444;
+  transform: translateY(-2px);
+}
+
+.subscribe-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .subscribe-message {
-  margin-top: 15px;
+  margin-top: 18px !important;
+  font-size: 14px !important;
+  color: #333 !important;
+}
+
+.subscribe-note {
+  display: block;
+  margin-top: 18px;
+  color: #999;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .subscribe-section {
+    padding: 45px 18px;
+  }
+
+  .subscribe-section h2 {
+    font-size: 25px;
+  }
+
+  .subscribe-form {
+    flex-direction: column;
+  }
+
+  .subscribe-form input,
+  .subscribe-form button {
+    width: 100%;
+  }
 }

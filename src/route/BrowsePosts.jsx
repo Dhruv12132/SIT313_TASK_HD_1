@@ -1,8 +1,12 @@
 
 import { useEffect, useState } from "react";
+import { useAuth } from "../AuthContext";
 import "./BrowsePosts.css";
 
+
 function BrowsePosts() {
+const { user } = useAuth();
+
   const [posts, setPosts] = useState([]);
   const [userPlan, setUserPlan] = useState("Visitor");
   const [loading, setLoading] = useState(true);
@@ -13,15 +17,55 @@ function BrowsePosts() {
   const [planFilter, setPlanFilter] = useState("All");
   const [tagFilter, setTagFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState("newest");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalPosts, setTotalPosts] = useState(0);
+
+  // Store the cursor needed to open each page
+  const [cursorByPage, setCursorByPage] = useState({ 1: null });
 
   // Hide and expand states
   const [hiddenIds, setHiddenIds] = useState([]);
   const [expandedIds, setExpandedIds] = useState([]);
 
-  // Get posts from the backend
+  // Check whether any filters are being used
+  const hasFilters =
+    search.trim() !== "" ||
+    typeFilter !== "All" ||
+    planFilter !== "All" ||
+    tagFilter.trim() !== "" ||
+    dateFilter !== "";
+
+  // Prepare the request parameters
+  const getRequestParams = (page, cursor) => {
+    const params = new URLSearchParams({
+      page: page,
+      search: search,
+      type: typeFilter,
+      plan: planFilter,
+      tag: tagFilter,
+      date: dateFilter,
+      sort: sortOrder
+    });
+
+    if (!hasFilters && cursor) {
+      params.set("cursor", cursor);
+    }
+
+    return params;
+  };
+
+  // Load posts whenever the page or filters change
   useEffect(() => {
     const loadPosts = async () => {
       try {
+        setLoading(true);
+        setError("");
+
         const token = localStorage.getItem("token");
         const headers = {};
 
@@ -29,8 +73,12 @@ function BrowsePosts() {
           headers.Authorization = "Bearer " + token;
         }
 
+        const cursor = cursorByPage[currentPage];
+
+        const params = getRequestParams(currentPage, cursor);
+
         const response = await fetch(
-          "http://localhost:3000/posts",
+          `http://localhost:3000/posts?${params.toString()}`,
           { headers }
         );
 
@@ -42,6 +90,16 @@ function BrowsePosts() {
 
         setPosts(data.posts || []);
         setUserPlan(data.userPlan || "Visitor");
+        setTotalPages(data.totalPages || 1);
+        setTotalPosts(data.totalPosts || 0);
+
+        // Remember the cursor for the next page
+        if (data.paginationMode === "cursor" && data.nextCursorId) {
+          setCursorByPage((previous) => ({
+            ...previous,
+            [currentPage + 1]: data.nextCursorId
+          }));
+        }
 
       } catch (error) {
         setError(error.message);
@@ -51,7 +109,23 @@ function BrowsePosts() {
     };
 
     loadPosts();
-  }, []);
+  }, [
+    currentPage,
+    cursorByPage[currentPage],
+    search,
+    typeFilter,
+    planFilter,
+    tagFilter,
+    dateFilter,
+    sortOrder
+  ]);
+
+  // Reset pagination when filters change
+  const resetPagination = () => {
+    setCurrentPage(1);
+    setCursorByPage({ 1: null });
+    setExpandedIds([]);
+  };
 
   // Hide a post from the current page
   const handleHide = (postId) => {
@@ -69,62 +143,93 @@ function BrowsePosts() {
     }
   };
 
-  // Reset filters and hidden posts
+  // Change the page and collect missing cursors if needed
+  const handlePageChange = async (page) => {
+    if (page < 1 || page > totalPages || page === currentPage) {
+      return;
+    }
+
+    // Filtered results use normal numbered pagination
+    if (hasFilters) {
+      setCurrentPage(page);
+      setExpandedIds([]);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const headers = {};
+
+      if (token) {
+        headers.Authorization = "Bearer " + token;
+      }
+
+      // Find the cursor needed to open the selected page
+      const newCursors = { ...cursorByPage };
+
+      for (let nextPage = 2; nextPage <= page; nextPage++) {
+        if (newCursors[nextPage]) {
+          continue;
+        }
+
+        const previousCursor = newCursors[nextPage - 1];
+
+        const params = getRequestParams(
+          nextPage - 1,
+          previousCursor
+        );
+
+        const response = await fetch(
+          `http://localhost:3000/posts?${params.toString()}`,
+          { headers }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Could not load page");
+        }
+
+        if (!data.nextCursorId) {
+          break;
+        }
+
+        newCursors[nextPage] = data.nextCursorId;
+      }
+
+      setCursorByPage(newCursors);
+
+      if (page === 1 || newCursors[page]) {
+        setCurrentPage(page);
+        setExpandedIds([]);
+      } else {
+        setError("Could not find the selected page.");
+      }
+
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  // Reset all filters
   const handleReset = () => {
     setTypeFilter("All");
     setPlanFilter("All");
     setTagFilter("");
     setDateFilter("");
+    setSearch("");
+    setSortOrder("newest");
+
+    setCurrentPage(1);
+    setCursorByPage({ 1: null });
     setHiddenIds([]);
     setExpandedIds([]);
   };
 
-  // Apply filters to the posts already received
-  const filteredPosts = posts.filter((post) => {
-
-    if (hiddenIds.includes(post.id)) {
-      return false;
-    }
-
-    if (
-      typeFilter !== "All" &&
-      post.type !== typeFilter
-    ) {
-      return false;
-    }
-
-    if (
-      planFilter !== "All" &&
-      (post.plan || "Free") !== planFilter
-    ) {
-      return false;
-    }
-
-    if (tagFilter) {
-      const tags = Array.isArray(post.tags)
-        ? post.tags
-        : [];
-
-      const hasTag = tags.some((tag) =>
-        String(tag).toLowerCase().includes(
-          tagFilter.toLowerCase()
-        )
-      );
-
-      if (!hasTag) {
-        return false;
-      }
-    }
-
-    if (
-      dateFilter &&
-      String(post.createdAt || "").slice(0, 10) !== dateFilter
-    ) {
-      return false;
-    }
-
-    return true;
-  });
+  // Remove hidden posts from the current page
+  const visiblePosts = posts.filter(
+    (post) => !hiddenIds.includes(post.id)
+  );
 
   return (
     <div className="browse-page">
@@ -135,9 +240,26 @@ function BrowsePosts() {
           <p>Explore questions and articles shared by users.</p>
         </div>
 
-        <div className="browse-user-plan">
-          Viewing as: <strong>{userPlan}</strong>
-        </div>
+       <div className="browse-user-plan">
+        Viewing as: <strong>
+            {user?.role === "admin"
+                ? "Admin"
+                : userPlan}
+        </strong>
+</div>
+      </div>
+
+      {/* Search section */}
+      <div className="browse-search">
+        <input
+          type="text"
+          placeholder="Search posts by title..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            resetPagination();
+          }}
+        />
       </div>
 
       {/* Filtering section */}
@@ -147,7 +269,10 @@ function BrowsePosts() {
           Post Type
           <select
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
+            onChange={(e) => {
+              setTypeFilter(e.target.value);
+              resetPagination();
+            }}
           >
             <option value="All">All Types</option>
             <option value="Question">Questions</option>
@@ -159,7 +284,10 @@ function BrowsePosts() {
           Post Plan
           <select
             value={planFilter}
-            onChange={(e) => setPlanFilter(e.target.value)}
+            onChange={(e) => {
+              setPlanFilter(e.target.value);
+              resetPagination();
+            }}
           >
             <option value="All">All Plans</option>
             <option value="Free">Free</option>
@@ -173,7 +301,10 @@ function BrowsePosts() {
             type="text"
             placeholder="Enter a tag"
             value={tagFilter}
-            onChange={(e) => setTagFilter(e.target.value)}
+            onChange={(e) => {
+              setTagFilter(e.target.value);
+              resetPagination();
+            }}
           />
         </label>
 
@@ -182,8 +313,25 @@ function BrowsePosts() {
           <input
             type="date"
             value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
+            onChange={(e) => {
+              setDateFilter(e.target.value);
+              resetPagination();
+            }}
           />
+        </label>
+
+        <label>
+          Sort By
+          <select
+            value={sortOrder}
+            onChange={(e) => {
+              setSortOrder(e.target.value);
+              resetPagination();
+            }}
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+          </select>
         </label>
 
       </div>
@@ -193,22 +341,34 @@ function BrowsePosts() {
         onClick={handleReset}
         type="button"
       >
-        Reset Filters and Hidden Posts
+        Reset Filters
       </button>
+
+      {/* Post count */}
+      {!loading && !error && (
+        <p className="browse-count">
+          Showing {totalPosts === 0 ? 0 : (currentPage - 1) * 5 + 1}
+          {" - "}
+          {Math.min(currentPage * 5, totalPosts)}
+          {" of "}
+          {totalPosts} posts
+        </p>
+      )}
 
       {/* Post list */}
       {loading && <p>Loading posts...</p>}
 
-      {error && <p className="browse-error">{error}</p>}
+      {error && (
+        <p className="browse-error">{error}</p>
+      )}
 
-      {!loading && !error && filteredPosts.length === 0 && (
+      {!loading && !error && visiblePosts.length === 0 && (
         <p>No posts found.</p>
       )}
 
       <div className="browse-post-list">
 
-        {filteredPosts.map((post) => {
-
+        {visiblePosts.map((post) => {
           const isExpanded = expandedIds.includes(post.id);
 
           const preview =
@@ -287,6 +447,46 @@ function BrowsePosts() {
         })}
 
       </div>
+
+      {/* Numbered pagination */}
+      {!loading && !error && totalPages > 1 && (
+        <div className="browse-pagination">
+
+          <button
+            type="button"
+            disabled={currentPage === 1}
+            onClick={() => handlePageChange(currentPage - 1)}
+          >
+            Previous
+          </button>
+
+          {Array.from(
+            { length: totalPages },
+            (_, index) => index + 1
+          ).map((page) => (
+            <button
+              type="button"
+              key={page}
+              className={
+                currentPage === page ? "active" : ""
+              }
+              onClick={() => handlePageChange(page)}
+            >
+              {page}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            disabled={currentPage === totalPages}
+            onClick={() => handlePageChange(currentPage + 1)}
+          >
+            Next
+          </button>
+
+        </div>
+      )}
+
     </div>
   );
 }

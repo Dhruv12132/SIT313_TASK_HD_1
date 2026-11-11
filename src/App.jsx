@@ -1,5 +1,8 @@
+
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import { AuthProvider } from "./AuthContext";
 
 import Navbar from "./Navbar";
 import Banner from "./Banner";
@@ -14,11 +17,16 @@ import Footer from "./route/Footer";
 
 import Login from "./route/Login";
 import Signup from "./route/Signup";
- 
+
 import Post from "./route/Post";
 import BrowsePosts from "./route/BrowsePosts";
 import Subscribe from "./Subscribe";
 import Pricing from "./Pricing";
+
+import AdminDashboard from "./route/AdminDashboard";
+import ManagePosts from "./route/ManagePosts";
+import ManageUsers from "./route/ManageUsers";
+
 function Home() {
   return (
     <>
@@ -36,20 +44,25 @@ function Home() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Navbar />
+    <AuthProvider>
+      <BrowserRouter>
+        <Navbar />
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/post" element={<Post />} />
-        <Route path="/browse-posts" element={<BrowsePosts />} />
-        <Route path="/pricing" element={<Pricing />} />
-      </Routes>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/post" element={<Post />} />
+          <Route path="/browse-posts" element={<BrowsePosts />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/posts" element={<ManagePosts />} />
+          <Route path="/admin/users" element={<ManageUsers />} />
+        </Routes>
 
-      <Footer />
-    </BrowserRouter>
+        <Footer />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

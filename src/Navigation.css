@@ -49,3 +49,9 @@
   color: white;
   text-decoration: none;
 }
+
+.navbar-user {
+  color: white;
+  font-weight: 600;
+  margin: 0 8px;
+}

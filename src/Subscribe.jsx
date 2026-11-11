@@ -1,4 +1,6 @@
+
 import { useState } from "react"
+import "./Subscribe.css"
 
 function Subscribe() {
   const [email, setEmail] = useState("")
@@ -39,27 +41,40 @@ function Subscribe() {
   }
 
   return (
-    <section
-      id="subscribe"
-      className="section"
-      style={{ textAlign: "center", padding: "20px" }}
-    >
-      <h2 className="text-2xl text-center font-bold">
-        Subscribe
-      </h2>
+    <section id="subscribe" className="subscribe-section">
+      <div className="subscribe-content">
+        <span className="subscribe-tag">STAY CONNECTED</span>
 
-      <input
-        type="email"
-        placeholder="Enter your email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+        <h2>Sign Up For Our Daily Insider</h2>
 
-      <button onClick={subscribe} disabled={loading}>
-        {loading ? "Subscribing..." : "Subscribe"}
-      </button>
+        <p>
+          Get the latest updates, interesting posts and news
+          delivered straight to your inbox.
+        </p>
 
-      <p>{message}</p>
+        <div className="subscribe-form">
+          <input
+            type="email"
+            placeholder="Enter your email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
+          <button onClick={subscribe} disabled={loading}>
+            {loading ? "Subscribing..." : "Subscribe"}
+          </button>
+        </div>
+
+        {message && (
+          <p className="subscribe-message" aria-live="polite">
+            {message}
+          </p>
+        )}
+
+        <span className="subscribe-note">
+          We respect your privacy. Unsubscribe anytime.
+        </span>
+      </div>
     </section>
   )
 }

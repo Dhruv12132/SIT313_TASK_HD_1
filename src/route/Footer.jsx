@@ -1,11 +1,11 @@
 import "./Footer.css"
-import { Link } from "react-router-dom"
+//import { Link } from "react-router-dom"
 
 function Footer() {
   return (
     <footer className="footer">
 
-      <div className="footer-signup">
+      {/* <div className="footer-signup">
 
         <h2>
           SIGN UP FOR OUR DAILY INSIDER
@@ -18,7 +18,7 @@ function Footer() {
         <Link to="/login">Login</Link>
       </div>
 
-    </div>
+    </div> */}
 
 
       <div className="footer-links">
