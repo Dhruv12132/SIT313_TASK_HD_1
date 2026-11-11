@@ -16,7 +16,7 @@ import Tutorials from "./Tutorials";
 import Footer from "./route/Footer";
 
 import Login from "./route/Login";
-import Signup from "./route/Signup";
+import Signup from "./route/signup";
 
 import Post from "./route/Post";
 import BrowsePosts from "./route/BrowsePosts";
