@@ -33,3 +33,6 @@ dist/
 .npm
 
 Service.json
+
+# Local Netlify folder
+.netlify
